@@ -76,9 +76,11 @@ async function api(path, options={}){
 }
   
 function render(rows){
-  leaderboard.innerHTML=rows.slice().sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map((s,i)=>
-    `<div class="admin-row"><span><b>#${i+1} ${s.name}</b><br><small>${s.role}</small></span><strong>${s.votes} votes</strong></div>`
-  ).join('');
+  leaderboard.innerHTML=rows.slice().sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map((s,i)=>{
+    const rank = i === 0 ? '🏆 #1 AURA CHAMPION' : `#${i+1}`;
+
+    return `<div class="admin-row"><span><b>${rank} ${s.name}</b><br><small>${s.role}</small></span><strong>${s.votes} votes</strong></div>`;
+  }).join('');
 }
 async function load(){
   const data=await api('/leaderboard');
