@@ -195,9 +195,9 @@ function render() {
       return `
         <div class="row">
 
-          <div class="rank">
-            #${rank}
-          </div>
+<div class="rank">
+  ${rank === 1 ? "🏆 #1 AURA CHAMPION" : `#${rank}`}
+</div>
 
           <div>
             <div class="name">
