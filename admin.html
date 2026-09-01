@@ -1,95 +1,189 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin • Seneca East Aura Board</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .admin-card{max-width:620px;margin:50px auto;background:#fff;border:1px solid #ddd;border-radius:18px;padding:28px;box-shadow:0 10px 35px rgba(0,0,0,.08)}
-    .admin-card input,.admin-card select{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #bbb;border-radius:10px;margin:8px 0 14px;font-size:16px}
-    .admin-card button{padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
-    .admin-card .primary{background:#111;color:#fff}
-    .admin-card .danger{background:#eee;color:#111}
-    .admin-grid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
-    .msg{min-height:24px;margin:10px 0;font-weight:600}
-    .hidden{display:none!important}
-    .admin-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:12px}
-    .admin-row button{padding:9px 12px}
-  </style>
-</head>
-<body>
-<header class="hero"><div class="wrap">
-  <div class="badge">🐯 SENECA EAST • ADMIN</div>
-  <h1>Admin <span>Login</span></h1>
-  <p>This page is intentionally not linked from the public leaderboard.</p>
-</div></header>
-<main class="wrap">
-  <section id="loginCard" class="admin-card">
-    <h2>Private admin login</h2>
-    <p>Enter the Cloudflare Worker admin code. The code is checked server-side and is never stored in this page.</p>
-    <label for="code">Admin code</label>
-    <input id="code" type="password" autocomplete="current-password" placeholder="Enter admin code">
-    <button id="login" class="primary">Log in</button>
-    <div id="loginMsg" class="msg" aria-live="polite"></div>
-  </section>
+// Cloudflare Worker + D1 backend for the Seneca East Aura Board.
+// Deploy with: wrangler deploy
+// Create D1 database, bind it as DB, then run schema.sql against it.
 
-  <section id="adminCard" class="admin-card hidden">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <div><h2>Admin voting</h2><p>You are in admin mode. Your votes bypass the 6-hour cooldown.</p></div>
-      <button id="logout" class="danger">Log out</button>
-    </div>
-    <label for="staff">Staff member</label>
-    <select id="staff"></select>
-    <button id="vote" class="primary">Cast admin vote</button>
-    <div id="voteMsg" class="msg" aria-live="polite"></div>
-    <h3>Current leaderboard</h3>
-    <div id="leaderboard">Loading…</div>
-  </section>
-</main>
-<script>
-const loginCard=document.getElementById('loginCard');
-const adminCard=document.getElementById('adminCard');
-const code=document.getElementById('code');
-const loginMsg=document.getElementById('loginMsg');
-const voteMsg=document.getElementById('voteMsg');
-const staff=document.getElementById('staff');
-const leaderboard=document.getElementById('leaderboard');
+const STAFF = [
+  {name:'Ashley Aichholz', role:'Fourth Grade Teacher', dept:'Elementary'},
+  {name:'Jan Allgyre', role:'Elementary Secretary', dept:'Elementary'},
+  {name:'Jillian Baker', role:'Technology/STEM', dept:'Elementary'},
+  {name:'Alison Basilone', role:'Social Worker', dept:'District'},
+  {name:'Mallory Beamer', role:'Third Grade Teacher', dept:'Elementary'},
+  {name:'Rebecca Gwirtz', role:'Spanish Teacher', dept:'High School'},
+  {name:'Mikayla Bonham', role:'MS Intervention Specialist', dept:'Middle School'},
+  {name:'Brittane Bordner', role:'6th Grade Math', dept:'Middle School'},
+  {name:'Hollie Borer', role:'District', dept:'District'},
+  {name:'Rick Bowerman', role:'District', dept:'District'},
+  {name:'Rebecca Bozo', role:'Second Grade', dept:'Elementary'},
+  {name:'Shawn Branham', role:'Maintenance Supervisor', dept:'District'},
+  {name:'Renee Bridgford', role:'First Grade', dept:'Elementary'},
+  {name:'Brian Bumb', role:'Kindergarten', dept:'Elementary'},
+  {name:'Haley Carrick', role:'District', dept:'District'},
+  {name:'Nicole Chaffee', role:'Second Grade', dept:'Elementary'},
+  {name:'Erica Cok', role:'Literacy Specialist', dept:'Elementary'},
+  {name:'David Danhoff', role:'District', dept:'District'},
+  {name:'Stephanie Dawson', role:'High School Science Teacher', dept:'High School'},
+  {name:'Elizabeth Dennings', role:'High School Art', dept:'High School'},
+  {name:'Jill Depinet', role:'Special Education Secretary', dept:'Middle School'},
+  {name:'Kevin Dick', role:'Middle School Math', dept:'Middle School'},
+  {name:'Justin Drennen', role:'HS PE/Health', dept:'High School'},
+  {name:'Katlyn Dutko', role:'Speech Pathologist', dept:'District'},
+  {name:'Amy Ferres', role:'Nurse', dept:'Middle School'},
+  {name:'Dana Foos', role:'Third Grade', dept:'Elementary'},
+  {name:'Emily Forehand', role:'High School Math', dept:'High School'},
+  {name:'Stephanie Gildenmeister', role:'Kindergarten', dept:'Elementary'},
+  {name:'Jenny Goshe', role:'Educational Aide', dept:'Elementary'},
+  {name:'Brooke Griffin', role:'High School Science', dept:'High School'},
+  {name:'Steve Hall', role:'High School Math', dept:'High School'},
+  {name:'Erin Hayes', role:'Elementary/Middle School Counselor', dept:'District'},
+  {name:'Steve Heal', role:'High School History', dept:'High School'},
+  {name:'Gregory Hendrix', role:'High School History', dept:'High School'},
+  {name:'Angie Hillis', role:'Full Time Substitute Teacher', dept:'District'},
+  {name:'Falynne Hoyda', role:'Full Time Sub', dept:'Elementary'},
+  {name:'Laurie Hunker', role:'District', dept:'District'},
+  {name:'Scott Jones', role:'High School Math Teacher', dept:'High School'},
+  {name:'Tiffany Kessler', role:'First Grade', dept:'Elementary'},
+  {name:'Whitney Kendrick', role:'Elementary Intervention Specialist', dept:'Elementary'},
+  {name:'Julia Kidwell', role:'Elementary Learning Resource Center', dept:'Elementary'},
+  {name:'Kacie Kihorany', role:'Preschool', dept:'Elementary'},
+  {name:'Kaleigh Krupp', role:'Elementary Learning Resource Center', dept:'Elementary'},
+  {name:'Anthony Langhurst', role:'Educational Aide', dept:'District'},
+  {name:'Martha Laughlin', role:'High School Learning Resource Center', dept:'High School'},
+  {name:'Morgan Looney', role:'High School English', dept:'High School'},
+  {name:'Kiara Lucius', role:'Middle/High School Secretary', dept:'High School'},
+  {name:'Ellen Lynch', role:'Middle School Health/Science', dept:'Middle School'},
+  {name:'Melody Margraf', role:'Title 1', dept:'Elementary'},
+  {name:'Diane Mason', role:'Physical Education', dept:'Elementary'},
+  {name:'Doug Mason', role:'Athletic Director', dept:'High School'},
+  {name:'Cody McClain', role:'FFA and Vo-Ag Instructor', dept:'High School'},
+  {name:'Kyle McConnell', role:'Staff', dept:'District'},
+  {name:'Jennie Meyers', role:'Food Services Director', dept:'District'},
+  {name:'Stephanie Miller', role:'Middle School Math', dept:'Middle School'},
+  {name:'Amanda Norman', role:'Educational Aide', dept:'Middle School'},
+  {name:'Amanda Nowak', role:'School Psychologist', dept:'District'},
+  {name:'George Parks', role:'Middle School Social Studies/PE', dept:'Middle School'},
+  {name:'Brandon Perkins', role:'Transportation Director', dept:'District'},
+  {name:'Emily Perkins', role:'5th Grade', dept:'Elementary'},
+  {name:'Ed Phillips', role:'Middle School Science/PE', dept:'Middle School'},
+  {name:'Stephanie Powell', role:'Middle School English', dept:'Middle School'},
+  {name:'Holly Pozderac', role:'Preschool', dept:'Elementary'},
+  {name:'Milan Pozderac', role:'Agriculture', dept:'High School'},
+  {name:'Letisha Rathburn', role:'Educational Aide', dept:'Middle School'},
+  {name:'Emma Reed', role:'Elementary Intervention Specialist', dept:'Elementary'},
+  {name:'Dawn Reichert', role:'Sixth Grade', dept:'Middle School'},
+  {name:'Michelle Reiter', role:'Third Grade', dept:'Elementary'},
+  {name:'Lindsay Rellinger', role:'District', dept:'District'},
+  {name:'Kristin Rickel', role:'Kindergarten', dept:'Elementary'},
+  {name:'Cindi Ritzler', role:'Fourth Grade', dept:'Elementary'},
+  {name:'Wendy Robinson', role:'Fourth Grade', dept:'Elementary'},
+  {name:'Jay Rogier', role:'Middle School English', dept:'Middle School'},
+  {name:'Abby Ruffing', role:'Fifth Grade', dept:'Elementary'},
+  {name:'Brenda Ruffing', role:'EMIS Coordinator', dept:'District'},
+  {name:'Nicole Schiefer', role:'First Grade', dept:'Elementary'},
+  {name:'Andrea Schimpf', role:'District Librarian', dept:'District'},
+  {name:'Matt Schock', role:'Staff', dept:'District'},
+  {name:'Tyler Schultz', role:'Band Director', dept:'District'},
+  {name:'Jennifer Scott', role:'District', dept:'District'},
+  {name:'Justin Showman', role:'Bus Mechanic', dept:'District'},
+  {name:'Krissy Smith', role:'District', dept:'District'},
+  {name:'Winnie Snook', role:'Third Grade Teacher', dept:'Elementary'},
+  {name:'Christine Spencer', role:'Pre-School Aide', dept:'Elementary'},
+  {name:'Kim Spencer', role:'K-12 Music Education', dept:'District'},
+  {name:'Courtney Stockmaster', role:'Pre-School Aide', dept:'Elementary'},
+  {name:'Heather Stockmaster', role:'9-12 Guidance', dept:'High School'},
+  {name:'Robbyne Sturgill', role:'Fifth Grade', dept:'Elementary'},
+  {name:'Rebecca Tobolt', role:'Preschool Aide', dept:'Elementary'},
+  {name:'Kasi Turek', role:'High School Learning Resource Center', dept:'High School'},
+  {name:'Hannah Wagner', role:'Elementary Art', dept:'Elementary'},
+  {name:'Austyn Walker', role:'Security Officer', dept:'District'},
+  {name:'Tonya Walker', role:'Sixth Grade', dept:'Middle School'},
+  {name:'Leslie Watson', role:'Middle School Learning Resource Center', dept:'Middle School'},
+  {name:'Bram White', role:'HS English', dept:'High School'},
+  {name:'Jenna Yost', role:'Preschool Teacher', dept:'Elementary'},
+  {name:'Amanda Zellner', role:'Elementary Librarian', dept:'Elementary'}
+];;
 
-async function api(path, options={}){
- const r=await fetch('https://seneca-east-aura.uwusenpaidaddy6741.workers.dev/api'+path,{credentials:'include',...options});
-  let data={}; try{data=await r.json()}catch{}
-  if(!r.ok) throw Object.assign(new Error(data.error||'Request failed'),{status:r.status,data});
-  return data;
+function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});}
+function clientKey(request){
+  const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+  // Rate-limit key is stored as a SHA-256 hash, not the raw IP.
+  return crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip+"|seneca-east-aura-v1")).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""));
 }
-function render(rows){
-  leaderboard.innerHTML=rows.slice().sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map((s,i)=>
-    `<div class="admin-row"><span><b>#${i+1} ${s.name}</b><br><small>${s.role}</small></span><strong>${s.votes} votes</strong></div>`
-  ).join('');
+
+async function leaderboard(env){
+  const dbRows=await env.DB.prepare("SELECT name, votes FROM votes ORDER BY votes DESC, name ASC").all();
+  const counts=new Map(dbRows.results.map(r=>[r.name,Number(r.votes)]));
+  return STAFF.map((s,i)=>({...s,votes:counts.get(s.name)||0,aura:Math.min(99.99,Math.max(1,72+((s.name.length*17+i*13)%2400)/100+(counts.get(s.name)||0)*0.35))}));
 }
-async function load(){
-  const data=await api('/leaderboard');
-  staff.innerHTML=data.map(s=>`<option value="${s.name.replaceAll('&','&amp;').replaceAll('"','&quot;')}">${s.name}</option>`).join('');
-  render(data);
+
+
+const ADMIN_COOKIE = "se_aura_admin";
+const ADMIN_TTL = 12 * 60 * 60 * 1000;
+
+async function signAdmin(env, expiresAt) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.ADMIN_CODE), {name:"HMAC", hash:"SHA-256"}, false, ["sign"]);
+  const payload = String(expiresAt);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const hex = [...new Uint8Array(sig)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  return payload + "." + hex;
 }
-async function check(){
-  try{await api('/admin/me'); loginCard.classList.add('hidden'); adminCard.classList.remove('hidden'); await load();}
-  catch{}
+
+async function isAdmin(request, env) {
+  if (!env.ADMIN_CODE) return false;
+  const raw = request.headers.get("Cookie") || "";
+  const match = raw.match(new RegExp("(?:^|;\\s*)" + ADMIN_COOKIE + "=([^;]+)"));
+  if (!match) return false;
+  const parts = match[1].split(".");
+  if (parts.length !== 2) return false;
+  const expires = Number(parts[0]);
+  if (!Number.isFinite(expires) || expires < Date.now()) return false;
+  const expected = await signAdmin(env, expires);
+  return timingSafeEqual(match[1], expected);
 }
-document.getElementById('login').onclick=async()=>{
-  loginMsg.textContent='';
-  try{
-    await api('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.value})});
-    code.value=''; loginCard.classList.add('hidden'); adminCard.classList.remove('hidden'); loginMsg.textContent=''; await load();
-  }catch(e){loginMsg.textContent=e.status===429?'Too many attempts. Try again later.':'Incorrect admin code.';}
+
+function timingSafeEqual(a,b){
+  if(a.length!==b.length) return false;
+  let x=0; for(let i=0;i<a.length;i++) x |= a.charCodeAt(i)^b.charCodeAt(i); return x===0;
+}
+
+export default {
+ async fetch(request,env){
+  const url=new URL(request.url);
+  if(url.pathname === "/api/admin/me") return json({admin: await isAdmin(request, env)});
+  if(url.pathname === "/api/admin/login" && request.method === "POST"){
+    let body; try{body=await request.json();}catch{return json({error:"Bad JSON"},400);}
+    if(!env.ADMIN_CODE) return json({error:"Admin secret is not configured"},503);
+    if(typeof body.code !== "string" || body.code.length < 1 || body.code.length > 200 || body.code !== env.ADMIN_CODE){
+      return json({error:"Invalid admin code"},401);
+    }
+    const expires = Date.now() + ADMIN_TTL;
+    const token = await signAdmin(env, expires);
+    return new Response(JSON.stringify({ok:true}),{headers:{"content-type":"application/json","cache-control":"no-store","Set-Cookie":`${ADMIN_COOKIE}=${token}; Path=/; Max-Age=${Math.floor(ADMIN_TTL/1000)}; HttpOnly; Secure; SameSite=Strict`}});
+  }
+  if(url.pathname === "/api/admin/logout" && request.method === "POST"){
+    return new Response(JSON.stringify({ok:true}),{headers:{"content-type":"application/json","cache-control":"no-store","Set-Cookie":`${ADMIN_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`}});
+  }
+  if(url.pathname.startsWith("/api/leaderboard")) return json(await leaderboard(env));
+  if(url.pathname==="/api/vote" && request.method==="POST"){
+    let body; try{body=await request.json();}catch{return json({error:"Bad JSON"},400);}
+    const staff=STAFF.find(s=>s.name===body.name);
+    if(!staff) return json({error:"Unknown staff member"},400);
+    const key=await clientKey(request);
+    const existing=await env.DB.prepare("SELECT voted_at FROM voter_cooldowns WHERE voter_key=?").bind(key).first();
+    if(existing && !admin){
+      const left=Date.now()-Number(existing.voted_at);
+      if(left<6*60*60*1000) return json({error:"COOLDOWN",retryAfter:6*60*60*1000-left},429);
+    }
+    if (admin) {
+      await env.DB.prepare("INSERT INTO votes(name,votes) VALUES(?,1) ON CONFLICT(name) DO UPDATE SET votes=votes+1").bind(staff.name).run();
+    } else {
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO votes(name,votes) VALUES(?,1) ON CONFLICT(name) DO UPDATE SET votes=votes+1").bind(staff.name),
+        env.DB.prepare("INSERT INTO voter_cooldowns(voter_key,voted_at) VALUES(?,?) ON CONFLICT(voter_key) DO UPDATE SET voted_at=excluded.voted_at").bind(key,Date.now())
+      ]);
+    }
+    return json({ok:true,leaderboard:await leaderboard(env)});
+  }
+  if(url.pathname==="/api/leaderboard") return json(await leaderboard(env));
+  return env.ASSETS.fetch(request);
+ }
 };
-document.getElementById('vote').onclick=async()=>{
-  voteMsg.textContent='';
-  try{const data=await api('/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:staff.value,admin:true})}); render(data.leaderboard); voteMsg.textContent='Vote recorded.';}
-  catch(e){voteMsg.textContent=e.data?.error||'Vote failed.';}
-};
-document.getElementById('logout').onclick=async()=>{await api('/admin/logout',{method:'POST'}); adminCard.classList.add('hidden'); loginCard.classList.remove('hidden');};
-check();
-</script>
-</body>
-</html>
