@@ -1,0 +1,11 @@
+name = "seneca-east-aura"
+main = "worker.js"
+compatibility_date = "2026-08-31"
+
+[assets]
+directory = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "seneca-east-aura"
+database_id = "eae8657d-3260-420e-b277-ad9bd47bddd3"

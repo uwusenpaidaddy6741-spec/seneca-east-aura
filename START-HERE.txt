@@ -1,0 +1,18 @@
+SENECA EAST AURA — START HERE
+
+This is the finished website package.
+
+Website:
+- index.html
+- styles.css
+- app.js
+
+Public voting backend:
+- worker.js
+- schema.sql
+- wrangler.toml
+
+The backend is required for votes to be shared by everyone and for the 6-hour voting rule
+to be enforced. Open README.md for the deployment steps.
+
+Once deployed, the site will have a public URL that you can share.

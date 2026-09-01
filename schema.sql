@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS votes (
+  name TEXT PRIMARY KEY,
+  votes INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS voter_cooldowns (
+  voter_key TEXT PRIMARY KEY,
+  voted_at INTEGER NOT NULL
+);

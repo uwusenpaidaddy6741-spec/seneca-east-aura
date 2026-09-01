@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seneca East Staff Aura — Public Leaderboard</title>
+  <meta name="description" content="A fan-made Seneca East staff aura leaderboard.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="badge">🐯 SENECA EAST • PUBLIC AURA BOARD</div>
+    <h1>Who has the most <span>aura?</span></h1>
+    <p>Vote for your favorite staff member. The leaderboard is shared publicly and updates for everyone.</p>
+    <div class="notice">⚠️ Fan-made parody project. Aura scores are not official school evaluations.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="controls">
+    <div>
+      <label>Search</label>
+      <input id="search" placeholder="Search a staff member..." autocomplete="off">
+    </div>
+    <div>
+      <label>Department</label>
+      <select id="dept"><option value="all">All departments</option><option>Elementary</option><option>Middle School</option><option>High School</option><option>District</option></select>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div><b id="staffCount">97</b><small>staff members</small></div>
+    <div><b id="totalVotes">0</b><small>total votes</small></div>
+    <div><b id="topScore">0</b><small>leader's aura</small></div>
+  </section>
+
+  <section class="leader">
+    <div class="kicker">#1 RIGHT NOW</div>
+    <div id="leaderBox">Loading leaderboard…</div>
+  </section>
+
+  <section class="list">
+    <div class="list-title"><div><div class="kicker">THE FULL RANKING</div><h2>Every Staff Member</h2></div><span id="updated"></span></div>
+    <div id="rows"></div>
+  </section>
+
+  <p class="source">Staff names and roles are based on the <a href="https://www.se-tigers.com/staff" target="_blank" rel="noopener">official Seneca East staff directory</a>.</p>
+</main>
+
+<footer>🐯 Seneca East Aura Board • Keep it fun.</footer>
+<script src="app.js"></script>
+</body>
+</html>
