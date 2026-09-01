@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     .admin-card{max-width:620px;margin:50px auto;background:#fff;border:1px solid #ddd;border-radius:18px;padding:28px;box-shadow:0 10px 35px rgba(0,0,0,.08)}
-    .admin-card input,.admin-card select{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #bbb;border-radius:10px;margin:8px 0 14px;font-size:16px}
+   .admin-card input,.admin-card select{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #bbb;border-radius:10px;margin:8px 0 14px;font-size:16px}
     .admin-card button{padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
     .admin-card .primary{background:#111;color:#fff}
     .admin-card .danger{background:#eee;color:#111}
@@ -56,12 +56,25 @@ const voteMsg=document.getElementById('voteMsg');
 const staff=document.getElementById('staff');
 const leaderboard=document.getElementById('leaderboard');
 
+const API = 'https://seneca-east-aura.uwusenpaidaddy6741.workers.dev/api';
+
 async function api(path, options={}){
-  const r=await fetch('/api'+path,{credentials:'include',...options});
-  let data={}; try{data=await r.json()}catch{}
-  if(!r.ok) throw Object.assign(new Error(data.error||'Request failed'),{status:r.status,data});
+  const r = await fetch(API + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  let data={};
+  try{data=await r.json()}catch{}
+  if(!r.ok) throw Object.assign(
+    new Error(data.error||'Request failed'),
+    {status:r.status,data}
+  );
   return data;
 }
+  
 function render(rows){
   leaderboard.innerHTML=rows.slice().sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map((s,i)=>
     `<div class="admin-row"><span><b>#${i+1} ${s.name}</b><br><small>${s.role}</small></span><strong>${s.votes} votes</strong></div>`
@@ -72,24 +85,36 @@ async function load(){
   staff.innerHTML=data.map(s=>`<option value="${s.name.replaceAll('&','&amp;').replaceAll('"','&quot;')}">${s.name}</option>`).join('');
   render(data);
 }
-async function check(){
-  try{await api('/admin/me'); loginCard.classList.add('hidden'); adminCard.classList.remove('hidden'); await load();}
-  catch{}
-}
+
 document.getElementById('login').onclick=async()=>{
   loginMsg.textContent='';
   try{
-    await api('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.value})});
+    const adminCode=code.value;
+await api('/admin/login',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({code:adminCode})
+});
+sessionStorage.setItem('adminCode',adminCode);
     code.value=''; loginCard.classList.add('hidden'); adminCard.classList.remove('hidden'); loginMsg.textContent=''; await load();
   }catch(e){loginMsg.textContent=e.status===429?'Too many attempts. Try again later.':'Incorrect admin code.';}
 };
 document.getElementById('vote').onclick=async()=>{
   voteMsg.textContent='';
-  try{const data=await api('/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:staff.value,admin:true})}); render(data.leaderboard); voteMsg.textContent='Vote recorded.';}
+ try{
+  const data=await api('/vote',{
+    method:'POST',
+    headers:{
+      'X-Admin-Code':sessionStorage.getItem('adminCode') || ''
+    },
+    body:JSON.stringify({name:staff.value})
+  });
+  render(data.leaderboard);
+  voteMsg.textContent='Vote recorded.';
+}
   catch(e){voteMsg.textContent=e.data?.error||'Vote failed.';}
 };
 document.getElementById('logout').onclick=async()=>{await api('/admin/logout',{method:'POST'}); adminCard.classList.add('hidden'); loginCard.classList.remove('hidden');};
-check();
 </script>
 </body>
 </html>
