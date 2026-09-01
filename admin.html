@@ -57,7 +57,7 @@ const staff=document.getElementById('staff');
 const leaderboard=document.getElementById('leaderboard');
 
 async function api(path, options={}){
-  const r=await fetch('/api'+path,{credentials:'include',...options});
+ const r=await fetch('https://seneca-east-aura.uwusenpaidaddy6741.workers.dev/api'+path,{credentials:'include',...options});
   let data={}; try{data=await r.json()}catch{}
   if(!r.ok) throw Object.assign(new Error(data.error||'Request failed'),{status:r.status,data});
   return data;
