@@ -77,7 +77,13 @@ async function api(path, options={}){
   
 function render(rows){
   leaderboard.innerHTML=rows.slice().sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map((s,i)=>{
-    const rank = i === 0 ? '🏆 #1 AURA CHAMPION' : `#${i+1}`;
+    const rank =
+  i === 0 ? '🏆 #1 AURA CHAMPION' :
+  i === 1 ? '🥈 #2 AURA ELITE' :
+  i === 2 ? '🥉 #3 AURA LEGEND' :
+  i === 3 ? '⭐ #4 AURA MASTER' :
+  i === 4 ? '🔥 #5 AURA ICON' :
+  `#${i+1}`;
 
     return `<div class="admin-row"><span><b>${rank} ${s.name}</b><br><small>${s.role}</small></span><strong>${s.votes} votes</strong></div>`;
   }).join('');
