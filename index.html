@@ -140,9 +140,17 @@ function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",
 function remaining(){return Math.max(0,cooldownUntil-Date.now());}
 function cdText(){let x=remaining();if(!x)return"Vote";let h=Math.floor(x/36e5),m=Math.floor(x%36e5/6e4),s=Math.floor(x%6e4/1e3);return `${h}h ${String(m).padStart(2,"0")}m ${String(s).padStart(2,"0")}s`;}
 async function load(){
-try{let r=await fetch(API+"/leaderboard",{cache:"no-store"});if(!r.ok)throw Error();data=await r.json();}
-catch(e){console.error(e);data=STAFF.map((s,i)=>({...s,votes:0,aura:72+((s.name.length*17+i*13)%2400)/100}));}
-render();
+  data=STAFF.map((s,i)=>({...s,votes:0,aura:72+((s.name.length*17+i*13)%2400)/100}));
+  render();
+
+  try{
+    let r=await fetch(API+"/leaderboard",{cache:"no-store"});
+    if(!r.ok)throw Error();
+    data=await r.json();
+    render();
+  }catch(e){
+    console.error("Leaderboard API error:",e);
+  }
 }
 function render(){
 let q=(document.getElementById("search").value||"").toLowerCase().trim(),d=document.getElementById("dept").value;
