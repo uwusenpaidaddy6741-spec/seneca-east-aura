@@ -171,7 +171,7 @@ if(remaining())return;
 try{
 let r=await fetch(API+"/vote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
 let b=await r.json().catch(()=>({}));
-f(!r.ok){if(b.error==="COOLDOWN"){cooldownUntil=Date.now()+Number(b.retryAfter||7200000);localStorage.setItem("auraCooldownUntil",cooldownUntil);render();alert("You can vote again in 2 hours.");return;}throw Error();}
+if(!r.ok){if(b.error==="COOLDOWN"){cooldownUntil=Date.now()+Number(b.retryAfter||7200000);localStorage.setItem("auraCooldownUntil",cooldownUntil);render();alert("You can vote again in 2 hours.");return;}throw Error();}
 cooldownUntil=Date.now()+7200000;localStorage.setItem("auraCooldownUntil",cooldownUntil);
 if(b.leaderboard)data=b.leaderboard;else await load();render();
 }catch(e){console.error(e);alert("The voting server could not process your vote. Please try again.");}
