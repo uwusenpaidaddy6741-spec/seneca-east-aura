@@ -155,7 +155,7 @@ if(all[0])document.getElementById("leaderBox").innerHTML=`<div class="leader-mai
 let max=Math.max(1,...all.map(s=>Number(s.aura||0))),cd=remaining();
 document.getElementById("rows").innerHTML=rows.length?rows.map(s=>{
 let rank=all.findIndex(x=>x.name===s.name)+1,a=Number(s.aura||0);
-return `<div class="row"><div class="rank">${rank===1?"🏆 #1 AURA CHAMPION":`#${rank}`}</div><div><div class="name">${esc(s.name)}</div><div class="role">${esc(s.role)} • ${esc(s.dept)}</div></div><div class="score">${a.toFixed(1)}</div><div><div class="bar"><i style="width:${Math.min(100,a/max*100)}%"></i></div><div class="vote"><button class="vote-btn" data-name="${esc(s.name)}" ${cd?"disabled":""}>⬆ Vote</button><span class="status">${cd?cdText():"Vote"}</span></div></div></div>`;
+return `<div class="row"><div class="rank">${rank===1?"🏆 #1 AURA CHAMPION":rank===2?"🥈 #2 AURA ELITE":rank===3?"🥉 #3 AURA LEGEND":rank===4?"⭐ #4 AURA MASTER":rank===5?"🔥 #5 AURA ICON":`#${rank}`}</div><div><div class="name">${esc(s.name)}</div><div class="role">${esc(s.role)} • ${esc(s.dept)}</div></div><div class="score">${a.toFixed(1)}</div><div><div class="bar"><i style="width:${Math.min(100,a/max*100)}%"></i></div><div class="vote"><button class="vote-btn" data-name="${esc(s.name)}" ${cd?"disabled":""}>⬆ Vote</button><span class="status">${cd?cdText():"Vote"}</span></div></div></div>`;
 }).join(""):`<div class="empty">No staff members match your search.</div>`;
 }
 async function vote(name){
@@ -163,8 +163,8 @@ if(remaining())return;
 try{
 let r=await fetch(API+"/vote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
 let b=await r.json().catch(()=>({}));
-if(!r.ok){if(b.error==="COOLDOWN"){cooldownUntil=Date.now()+Number(b.retryAfter||21600000);localStorage.setItem("auraCooldownUntil",cooldownUntil);render();alert("You can vote again in 6 hours.");return;}throw Error();}
-cooldownUntil=Date.now()+21600000;localStorage.setItem("auraCooldownUntil",cooldownUntil);
+f(!r.ok){if(b.error==="COOLDOWN"){cooldownUntil=Date.now()+Number(b.retryAfter||7200000);localStorage.setItem("auraCooldownUntil",cooldownUntil);render();alert("You can vote again in 2 hours.");return;}throw Error();}
+cooldownUntil=Date.now()+7200000;localStorage.setItem("auraCooldownUntil",cooldownUntil);
 if(b.leaderboard)data=b.leaderboard;else await load();render();
 }catch(e){console.error(e);alert("The voting server could not process your vote. Please try again.");}
 }
