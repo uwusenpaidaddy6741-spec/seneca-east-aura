@@ -16,6 +16,20 @@
     .hidden{display:none!important}
     .admin-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:12px}
     .admin-row button{padding:9px 12px}
+    
+    #resetVotesBtn{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#b91c1c;
+  color:white;
+  border:0;
+  padding:12px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+  z-index:9999;
+}
   </style>
 </head>
 <body>
@@ -60,6 +74,7 @@ const API = 'https://seneca-east-aura.uwusenpaidaddy6741.workers.dev/api';
 
 async function api(path, options={}){
   const r = await fetch(API + path, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -103,7 +118,6 @@ await api('/admin/login',{
   headers:{'Content-Type':'application/json'},
   body:JSON.stringify({code:adminCode})
 });
-sessionStorage.setItem('adminCode',adminCode);
     code.value=''; loginCard.classList.add('hidden'); adminCard.classList.remove('hidden'); loginMsg.textContent=''; await load();
   }catch(e){loginMsg.textContent=e.status===429?'Too many attempts. Try again later.':'Incorrect admin code.';}
 };
@@ -112,9 +126,7 @@ document.getElementById('vote').onclick=async()=>{
  try{
   const data=await api('/vote',{
     method:'POST',
-    headers:{
-      'X-Admin-Code':sessionStorage.getItem('adminCode') || ''
-    },
+   
     body:JSON.stringify({name:staff.value})
   });
   render(data.leaderboard);
@@ -123,6 +135,47 @@ document.getElementById('vote').onclick=async()=>{
   catch(e){voteMsg.textContent=e.data?.error||'Vote failed.';}
 };
 document.getElementById('logout').onclick=async()=>{await api('/admin/logout',{method:'POST'}); adminCard.classList.add('hidden'); loginCard.classList.remove('hidden');};
+  
+  document.getElementById('resetVotesBtn').onclick = async () => {
+  const first = confirm(
+    "WARNING: This will permanently delete ALL votes and ALL voter cooldowns.\n\nContinue?"
+  );
+
+  if (!first) return;
+
+  const second = confirm(
+    "Are you absolutely sure?\n\nEvery staff member will be reset to 0 votes."
+  );
+
+  if (!second) return;
+
+  try {
+    const r = await fetch(API + "/admin/reset", {
+      method: "POST",
+      credentials: "include"
+    });
+
+    const result = await r.json();
+
+    if (!r.ok) {
+      alert(result.error || "Reset failed.");
+      return;
+    }
+
+    alert("All votes and voter cooldowns have been deleted.");
+    load();
+
+  } catch (e) {
+    alert("Could not connect to the server.");
+    console.error(e);
+  }
+};
+  
 </script>
+
+  <button id="resetVotesBtn">
+  🗑️ RESET ALL VOTES
+</button>
+  
 </body>
 </html>
